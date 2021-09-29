@@ -81,7 +81,7 @@ public final class Tests {
                 ResultProcessor.ID, id, action, file);
         Collections.addAll(args, "-a", processArg);
         Main.main(args.toArray(new String[0]));
-        if (action.equals("compare")) {
+        if (action.equals("colimpare")) {
             Set<String> mismatches = World.getResult(ResultProcessor.ID);
             Assert.assertTrue("Mismatches of analysis \"" + id + "\":\n" +
                             String.join("\n", mismatches),
