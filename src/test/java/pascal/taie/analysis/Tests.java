@@ -129,14 +129,4 @@ public final class Tests {
         Collections.addAll(args, "-a", "pta=" + String.join(";", ptaArgs));
         Main.main(args.toArray(new String[0]));
     }
-
-    public static void main(String[] args) {
-        LiveVarTest liveVarTest = new LiveVarTest();
-        liveVarTest.testAssign();
-        liveVarTest.Array();
-        liveVarTest.Fibonacci();
-        liveVarTest.Reference();
-        liveVarTest.testBranch();
-        liveVarTest.testBranchLoop();
-    }
 }
