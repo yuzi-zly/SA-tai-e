@@ -83,13 +83,13 @@ public class ConstantPropagation extends
     @Override
     public boolean transferNode(Stmt stmt, CPFact in, CPFact out) {
         if(stmt instanceof DefinitionStmt){
-            LValue var = ((DefinitionStmt) stmt).getLValue();
-            RValue exp = ((DefinitionStmt) stmt).getRValue();
-            if(var == null){
-                //stmt is a method call
+            LValue var = ((DefinitionStmt<?,?>) stmt).getLValue();
+            RValue exp = ((DefinitionStmt<?,?>) stmt).getRValue();
+            if(!(var instanceof Var)){
+                //stmt is a method call e.g. init
                 return out.copyFrom(in);
             }
-            assert var instanceof Var;
+
             if(!canHoldInt(((Var) var))){
                 // Type is not int
                 return out.copyFrom(in);
