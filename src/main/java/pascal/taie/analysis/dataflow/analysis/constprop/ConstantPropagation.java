@@ -150,6 +150,13 @@ public class ConstantPropagation extends
             }
 
             if(in.get(operand1).isNAC() || in.get(operand2).isNAC()){
+                if(exp instanceof ArithmeticExp && !in.get(operand2).isNAC()){
+                    ArithmeticExp.Op op = ((ArithmeticExp) exp).getOperator();
+                    int val2 = in.get(operand2).getConstant();
+                    if((op == ArithmeticExp.Op.DIV || op == ArithmeticExp.Op.REM) && val2 == 0){
+                        return Value.getUndef();
+                    }
+                }
                 return Value.getNAC();
             }
             else if(!in.get(operand1).isConstant() || !in.get(operand2).isConstant()){
