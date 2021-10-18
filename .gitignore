@@ -4,5 +4,4 @@ build
 out
 output
 sootOutput
-*/.DS_Store
-*/*/.DS_Store
+*.DS_Store
