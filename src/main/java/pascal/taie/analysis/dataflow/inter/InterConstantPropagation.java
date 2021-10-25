@@ -78,13 +78,21 @@
 
      @Override
      protected CPFact transferNormalEdge(NormalEdge<Stmt> edge, CPFact out) {
-         // TODO - finish me
-         return null;
+         return out.copy();
      }
 
      @Override
      protected CPFact transferCallToReturnEdge(CallToReturnEdge<Stmt> edge, CPFact out) {
-         // TODO - finish me
+         Stmt callSite = edge.getSource();
+         Stmt returnSite = edge.getTarget();
+         assert callSite instanceof Invoke;
+         if(((Invoke) callSite).getResult() == null){
+
+         }
+         else{
+
+         }
+
          return null;
      }
 

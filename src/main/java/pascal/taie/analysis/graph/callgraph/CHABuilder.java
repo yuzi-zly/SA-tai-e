@@ -28,10 +28,21 @@ class CHABuilder implements CGBuilder<Invoke, JMethod> {
         DefaultCallGraph callGraph = new DefaultCallGraph();
         callGraph.addEntryMethod(entry);
 
-        List<JMethod> workList = new ArrayList<>();
-
-
-
+        Queue<JMethod> workList = new LinkedList<>();
+        workList.add(entry);
+        while(!workList.isEmpty()){
+            JMethod jMethod = workList.poll();
+            if(!callGraph.contains(jMethod)){
+                callGraph.addReachableMethod(jMethod);
+                callGraph.callSitesIn(jMethod).forEach(invoke -> {
+                    Set<JMethod> targets = resolve(invoke);
+                    for(JMethod target : targets){
+                        callGraph.addEdge(new Edge<>(CallGraphs.getCallKind(invoke),invoke,target));
+                        workList.add(target);
+                    }
+                });
+            }
+        }
         return callGraph;
     }
 
@@ -57,20 +68,30 @@ class CHABuilder implements CGBuilder<Invoke, JMethod> {
         else if(CallGraphs.getCallKind(callSite) == CallKind.VIRTUAL || CallGraphs.getCallKind(callSite) == CallKind.INTERFACE){
             JClass declaringClass = callSite.getMethodRef().getDeclaringClass();
             Subsignature subsignature = callSite.getMethodRef().getSubsignature();
-            JMethod target = dispatch(declaringClass, subsignature);
-            if(target != null){
-                targets.add(target);
-            }
-            for(JClass jClass : new ArrayList<>(hierarchy.getDirectSubclassesOf(declaringClass))){
-                target = dispatch(jClass, subsignature);
-                if(target != null){
-                    targets.add(target);
+            if(declaringClass.isInterface()){
+                for(JClass jClass : new ArrayList<>(hierarchy.getDirectSubinterfacesOf(declaringClass))){
+                    JMethod target = dispatch(jClass, subsignature);
+                    if(target != null && !target.isAbstract()){
+                        targets.add(target);
+                    }
+                }
+                for(JClass jClass : new ArrayList<>(hierarchy.getDirectImplementorsOf(declaringClass))){
+                    JMethod target = dispatch(jClass, subsignature);
+                    if(target != null && !target.isAbstract()){
+                        targets.add(target);
+                    }
                 }
             }
-            for(JClass jClass : new ArrayList<>(hierarchy.getDirectSubinterfacesOf(declaringClass))){
-                target = dispatch(jClass, subsignature);
-                if(target != null){
+            else{
+                JMethod target = dispatch(declaringClass, subsignature);
+                if(target != null && !target.isAbstract()){
                     targets.add(target);
+                }
+                for(JClass jClass : new ArrayList<>(hierarchy.getDirectSubclassesOf(declaringClass))){
+                    target = dispatch(jClass, subsignature);
+                    if(target != null && !target.isAbstract()){
+                        targets.add(target);
+                    }
                 }
             }
         }
