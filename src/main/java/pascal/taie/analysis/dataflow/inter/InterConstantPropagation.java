@@ -88,12 +88,13 @@
          assert callSite instanceof Invoke;
          if(((Invoke) callSite).getResult() == null){
             //o.m()
-
+            return out.copy();
          }
          else{
             //a = o.m()
-         }
+            Var result = ((Invoke) callSite).getResult();
 
+         }
          return null;
      }
 
