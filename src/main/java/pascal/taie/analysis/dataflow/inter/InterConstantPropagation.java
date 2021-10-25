@@ -87,10 +87,11 @@
          Stmt returnSite = edge.getTarget();
          assert callSite instanceof Invoke;
          if(((Invoke) callSite).getResult() == null){
+            //o.m()
 
          }
          else{
-
+            //a = o.m()
          }
 
          return null;
