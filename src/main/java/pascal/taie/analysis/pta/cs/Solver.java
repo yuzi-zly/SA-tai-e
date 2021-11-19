@@ -98,7 +98,8 @@ class Solver {
             for(Stmt stmt : csMethod.getMethod().getIR().getStmts()){
                 if(stmt instanceof New){
                     CSVar csVar = csManager.getCSVar(csMethod.getContext(), ((New) stmt).getLValue());
-                    CSObj csObj = csManager.getCSObj(csMethod.getContext(), heapModel.getObj((New) stmt));
+                    Obj obj = heapModel.getObj((New) stmt);
+                    CSObj csObj = csManager.getCSObj(contextSelector.selectHeapContext(csMethod, obj), obj);
                     PointsToSet pointsToSet = PointsToSetFactory.make(csObj);
                     workList.addEntry(csVar, pointsToSet);
                 }
@@ -268,23 +269,25 @@ class Solver {
             CSVar thisPtr = csManager.getCSVar(context, callee.getIR().getThis());
             workList.addEntry(thisPtr, pointsToSet);
             //call edge
-            Edge<CSCallSite, CSMethod> edge = new Edge<>(CallGraphs.getCallKind(invoke), invoke, callee);
+            CSMethod csCallee = csManager.getCSMethod(context, callee);
+            Edge<CSCallSite, CSMethod> edge = new Edge<>(CallGraphs.getCallKind(invoke), csCallSite, csCallee);
             if(callGraph.addEdge(edge)){
-                addReachable(callee);
+                addReachable(csCallee);
+                //args -> params
                 List<Var> args = invoke.getInvokeExp().getArgs();
                 List<Var> params = callee.getIR().getParams();
                 for(int i = 0; i < args.size(); ++i){
-                    VarPtr argPtr = pointerFlowGraph.getVarPtr(args.get(i));
-                    VarPtr parPtr = pointerFlowGraph.getVarPtr(params.get(i));
+                    CSVar argPtr = csManager.getCSVar(recv.getContext(), args.get(i));
+                    CSVar parPtr = csManager.getCSVar(context, params.get(i));
                     addPFGEdge(argPtr, parPtr);
                 }
-
+                //return value
                 Var result = invoke.getResult();
                 if(result != null){
-                    VarPtr resultPtr = pointerFlowGraph.getVarPtr(result);
+                    CSVar resultPtr = csManager.getCSVar(recv.getContext(), result);
                     List<Var> returnVars = callee.getIR().getReturnVars();
                     for(Var returnVar : returnVars){
-                        VarPtr retPtr = pointerFlowGraph.getVarPtr(returnVar);
+                        CSVar retPtr = csManager.getCSVar(context, returnVar);
                         addPFGEdge(retPtr, resultPtr);
                     }
                 }
