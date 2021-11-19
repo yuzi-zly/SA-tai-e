@@ -35,10 +35,10 @@ public class _2CallSelector implements ContextSelector {
     public Context selectContext(CSCallSite callSite, JMethod callee) {
         int len = callSite.getContext().getLength();
         if(len == 0){
-            return ListContext.make(callSite);
+            return ListContext.make(callSite.getCallSite());
         }
         else{
-            return ListContext.make(callSite.getContext().getElementAt(len - 1), callSite);
+            return ListContext.make(callSite.getContext().getElementAt(len - 1), callSite.getCallSite());
         }
     }
 
@@ -46,15 +46,21 @@ public class _2CallSelector implements ContextSelector {
     public Context selectContext(CSCallSite callSite, CSObj recv, JMethod callee) {
         int len = callSite.getContext().getLength();
         if(len == 0){
-            return ListContext.make(callSite);
+            return ListContext.make(callSite.getCallSite());
         }
         else{
-            return ListContext.make(callSite.getContext().getElementAt(len - 1), callSite);
+            return ListContext.make(callSite.getContext().getElementAt(len - 1), callSite.getCallSite());
         }
     }
 
     @Override
     public Context selectHeapContext(CSMethod method, Obj obj) {
-        return ListContext.make(method);
+        int len = method.getContext().getLength();
+        if(len == 0){
+            return ListContext.make();
+        }
+        else{
+            return ListContext.make(method.getContext().getElementAt(len - 1));
+        }
     }
 }

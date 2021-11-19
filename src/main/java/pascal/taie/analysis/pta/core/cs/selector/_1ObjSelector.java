@@ -32,12 +32,18 @@ public class _1ObjSelector implements ContextSelector {
 
     @Override
     public Context selectContext(CSCallSite callSite, JMethod callee) {
-        return callSite.getContext();
+        int len = callSite.getContext().getLength();
+        if(len == 0){
+            return ListContext.make();
+        }
+        else{
+            return ListContext.make(callSite.getContext().getElementAt(len - 1));
+        }
     }
 
     @Override
     public Context selectContext(CSCallSite callSite, CSObj recv, JMethod callee) {
-        return ListContext.make(recv);
+        return ListContext.make(recv.getObject());
     }
 
     @Override
