@@ -16,8 +16,7 @@ import pascal.taie.analysis.dataflow.fact.DataflowResult;
 import pascal.taie.analysis.graph.icfg.ICFG;
 import pascal.taie.util.collection.SetQueue;
 
-import java.util.Queue;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 /**
@@ -48,11 +47,66 @@ class InterSolver<Method, Node, Fact> {
         return result;
     }
 
+    public DataflowResult<Node, Fact> getResult() {
+        return result;
+    }
+
     private void initialize() {
-        // TODO - finish me
+        List<Method> entryList = icfg.entryMethods().collect(Collectors.toList());
+        assert entryList.size() == 1;
+        Node entryNode = icfg.getEntryOf(entryList.get(0));
+        result.setOutFact(entryNode, analysis.newBoundaryFact(entryNode));
+        result.setInFact(entryNode, analysis.newInitialFact());
+        for(Node node : icfg){
+            if(node.equals(entryNode)) continue;
+            result.setInFact(node, analysis.newInitialFact());
+            result.setOutFact(node, analysis.newInitialFact());
+        }
     }
 
     private void doSolve() {
-        // TODO - finish me
+        workList = new LinkedList<>();
+        fillWorkList();
+        while(!workList.isEmpty()){
+            Node node = workList.poll();
+            System.out.println("InterSolver: " + node);
+            icfg.inEdgesOf(node).forEach(nodeICFGEdge -> {
+                Node pred = nodeICFGEdge.getSource();
+                Fact fact = analysis.transferEdge(nodeICFGEdge, result.getOutFact(pred));
+                analysis.meetInto(fact, result.getInFact(node));
+            });
+
+            boolean chgOccur = analysis.transferNode(node, result.getInFact(node), result.getOutFact(node));
+            if(chgOccur){
+                icfg.outEdgesOf(node).forEach(nodeICFGEdge -> {
+                    workList.add(nodeICFGEdge.getTarget());
+                });
+            }
+        }
     }
+
+    //按照调用顺序添加
+    private void fillWorkList(){
+        List<Method> entryList = icfg.entryMethods().collect(Collectors.toList());
+        assert entryList.size() == 1;
+        Stack<Node> stack = new Stack<>();
+        stack.add(icfg.getEntryOf(entryList.get(0)));
+        while(!stack.isEmpty()){
+            Node tempNode = stack.pop();
+            if(workList.contains(tempNode))
+                continue;
+            workList.add(tempNode);
+            icfg.outEdgesOf(tempNode).forEach(nodeICFGEdge -> {
+                Node succ = nodeICFGEdge.getTarget();
+                stack.add(succ);
+            });
+        }
+        for(Node node : icfg){
+            if(workList.contains(node))
+                continue;
+            workList.add(node);
+        }
+    }
+
+
 }
