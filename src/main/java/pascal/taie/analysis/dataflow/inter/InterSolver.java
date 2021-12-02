@@ -51,6 +51,10 @@ class InterSolver<Method, Node, Fact> {
         return result;
     }
 
+    public Queue<Node> getWorkList() {
+        return workList;
+    }
+
     private void initialize() {
         List<Method> entryList = icfg.entryMethods().collect(Collectors.toList());
         assert entryList.size() == 1;
@@ -66,7 +70,9 @@ class InterSolver<Method, Node, Fact> {
 
     private void doSolve() {
         workList = new LinkedList<>();
-        fillWorkList();
+        for(Node node : icfg){
+            workList.add(node);
+        }
         while(!workList.isEmpty()){
             Node node = workList.poll();
             System.out.println("InterSolver: " + node);
@@ -84,29 +90,4 @@ class InterSolver<Method, Node, Fact> {
             }
         }
     }
-
-    //按照调用顺序添加
-    private void fillWorkList(){
-        List<Method> entryList = icfg.entryMethods().collect(Collectors.toList());
-        assert entryList.size() == 1;
-        Stack<Node> stack = new Stack<>();
-        stack.add(icfg.getEntryOf(entryList.get(0)));
-        while(!stack.isEmpty()){
-            Node tempNode = stack.pop();
-            if(workList.contains(tempNode))
-                continue;
-            workList.add(tempNode);
-            icfg.outEdgesOf(tempNode).forEach(nodeICFGEdge -> {
-                Node succ = nodeICFGEdge.getTarget();
-                stack.add(succ);
-            });
-        }
-        for(Node node : icfg){
-            if(workList.contains(node))
-                continue;
-            workList.add(node);
-        }
-    }
-
-
 }

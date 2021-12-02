@@ -86,7 +86,6 @@ public class ConstantPropagation extends
             LValue var = ((DefinitionStmt<?,?>) stmt).getLValue();
             RValue exp = ((DefinitionStmt<?,?>) stmt).getRValue();
             if(!(var instanceof Var)){
-                //stmt is a method call e.g. init
                 return out.copyFrom(in);
             }
 

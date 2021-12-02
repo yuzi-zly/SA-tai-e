@@ -212,6 +212,94 @@
              result.update(x, xVal);
              return out.copyFrom(result);
          }
+         else if(stmt instanceof StoreField){
+             if(((StoreField) stmt).isStatic()){
+                 /*
+                    if
+                    T.f = 100
+                    then
+                    add all LoadField contains T.f
+                  */
+                 JField staticField = ((StoreField) stmt).getFieldAccess().getFieldRef().resolve();
+                 //遍历所有LoadField
+                 List<JMethod> rmList = pta.getCallGraph().reachableMethods().collect(Collectors.toList());
+                 for(JMethod rm : rmList){
+                     for(Stmt stmt1 : rm.getIR().getStmts()){
+                         if (stmt1 instanceof LoadField && ((LoadField) stmt1).isStatic()) {
+                             JField field = ((LoadField) stmt1).getFieldRef().resolve();
+                             if(staticField.equals(field)){
+                                 solver.getWorkList().add(stmt1);
+                             }
+                         }
+                     }
+                 }
+             }
+             else{
+                 /*
+                    if
+                    xBase.f = 100
+                    then
+                    add all LoadField whose pBase.f is alias of xBase.f
+                  */
+                 FieldAccess fieldAccess = ((StoreField) stmt).getFieldAccess();
+                 assert fieldAccess instanceof InstanceFieldAccess;
+                 JField instanceField = fieldAccess.getFieldRef().resolve();
+                 Var xBase = ((InstanceFieldAccess) fieldAccess).getBase();
+                 //遍历LoadField
+                 List<JMethod> rmList = pta.getCallGraph().reachableMethods().collect(Collectors.toList());
+                 for(JMethod rm : rmList){
+                     for(Stmt stmt1 : rm.getIR().getStmts()){
+                         if (stmt1 instanceof LoadField && !((LoadField) stmt1).isStatic()) {
+                             FieldAccess fieldAccess1 = ((LoadField) stmt1).getFieldAccess();
+                             assert fieldAccess1 instanceof InstanceFieldAccess;
+                             JField instanceField1 = fieldAccess1.getFieldRef().resolve();
+                             Var pBase = ((InstanceFieldAccess) fieldAccess1).getBase();
+                             if(areOverlapped(xBase, pBase) && instanceField.equals(instanceField1)){
+                                 solver.getWorkList().add(stmt1);
+                             }
+                         }
+                     }
+                 }
+             }
+             return out.copyFrom(in);
+         }
+         else if(stmt instanceof StoreArray){
+             /*
+                if
+                xArr[i] = 100
+                then
+                add all LoadArray whose pArr[j] is alias fo xArr[i]
+             */
+             ArrayAccess arrayAccess = ((StoreArray) stmt).getArrayAccess();
+             Var xArr = arrayAccess.getBase();
+             Var xIndex = arrayAccess.getIndex();
+             //遍历所有LoadArray
+             List<JMethod> rmList = pta.getCallGraph().reachableMethods().collect(Collectors.toList());
+             for(JMethod rm : rmList){
+                 for(Stmt stmt1 : rm.getIR().getStmts()){
+                     if(stmt1 instanceof LoadArray){
+                         ArrayAccess arrayAccess1 = ((LoadArray) stmt1).getArrayAccess();
+                         Var pArr = arrayAccess1.getBase();
+                         Var pIndex = arrayAccess1.getIndex();
+                         if(areOverlapped(xArr, pArr)){
+                             Value xIndexVal = in.get(xIndex);
+                             Value pIndexVal = solver.getResult().getInFact(stmt1).get(pIndex);
+                             if(xIndexVal.isConstant()){
+                                 if((pIndexVal.isConstant() && xIndexVal.getConstant() == pIndexVal.getConstant()) || pIndexVal.isNAC()){
+                                     solver.getWorkList().add(stmt1);
+                                 }
+                             }
+                             else if(xIndexVal.isNAC()){
+                                 if(!pIndexVal.isUndef()){
+                                     solver.getWorkList().add(stmt1);
+                                 }
+                             }
+                         }
+                     }
+                 }
+             }
+             return out.copyFrom(in);
+         }
          else{
              return cp.transferNode(stmt, in, out);
          }
