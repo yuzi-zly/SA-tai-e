@@ -102,10 +102,10 @@ public class TaintAnalysiss {
     //For Source
     public Obj sourceMatch(Invoke invoke){
         JMethod invokeMethod = invoke.getMethodRef().resolve();
-        Source source = new Source(invokeMethod, invokeMethod.getReturnType());
-        for(Source source1 : config.getSources()){
-            if(source.equals(source1)){
-                return manager.makeTaint(invoke, invokeMethod.getReturnType());
+        for(Source source : config.getSources()){
+            JMethod sourceMethod = source.getMethod();
+            if(invokeMethod.equals(sourceMethod)){
+                return manager.makeTaint(invoke, source.getType());
             }
         }
         return null;
@@ -124,43 +124,40 @@ public class TaintAnalysiss {
     }
 
     //For Transfer
-    public boolean isA2RTransfer(Invoke invoke, int argIndex){
+    public Type isA2RTransfer(Invoke invoke, int argIndex){
         JMethod invokeMethod = invoke.getMethodRef().resolve();
-        TaintTransfer taintTransfer = new TaintTransfer(
-                invokeMethod, argIndex, TaintTransfer.RESULT, invokeMethod.getReturnType()
-        );
-        for(TaintTransfer taintTransfer1 : config.getTransfers()){
-            if (taintTransfer.equals(taintTransfer1)) {
-                return true;
+        for(TaintTransfer taintTransfer : config.getTransfers()){
+            if(invokeMethod.equals(taintTransfer.getMethod())
+                    && argIndex == taintTransfer.getFrom()
+                    && TaintTransfer.RESULT == taintTransfer.getTo()){
+                return taintTransfer.getType();
             }
         }
-        return false;
+        return null;
     }
 
-    public boolean isB2RTransfer(Invoke invoke){
+    public Type isB2RTransfer(Invoke invoke){
         JMethod invokeMethod = invoke.getMethodRef().resolve();
-        TaintTransfer taintTransfer = new TaintTransfer(
-            invokeMethod, TaintTransfer.BASE, TaintTransfer.RESULT, invokeMethod.getReturnType()
-        );
-        for(TaintTransfer taintTransfer1 : config.getTransfers()){
-            if(taintTransfer.equals(taintTransfer1)){
-                return true;
+        for(TaintTransfer taintTransfer : config.getTransfers()){
+            if(invokeMethod.equals(taintTransfer.getMethod())
+                    && taintTransfer.getFrom() == TaintTransfer.BASE
+                    && taintTransfer.getTo() == TaintTransfer.RESULT){
+                return taintTransfer.getType();
             }
         }
-        return false;
+        return null;
     }
 
-    public boolean isA2BTransfer(Invoke invoke, int argIndex){
+    public Type isA2BTransfer(Invoke invoke, int argIndex){
         JMethod invokeMethod = invoke.getMethodRef().resolve();
-        TaintTransfer taintTransfer = new TaintTransfer(
-                invokeMethod, argIndex, TaintTransfer.BASE, invokeMethod.getReturnType()
-        );
-        for(TaintTransfer taintTransfer1 : config.getTransfers()){
-            if (taintTransfer.equals(taintTransfer1)) {
-                return true;
+        for(TaintTransfer taintTransfer : config.getTransfers()){
+            if(invokeMethod.equals(taintTransfer.getMethod())
+                    && argIndex == taintTransfer.getFrom()
+                    && taintTransfer.getTo() == TaintTransfer.BASE){
+                return taintTransfer.getType();
             }
         }
-        return false;
+        return null;
     }
 
     public Obj taintObjTransfer(Obj oldObj, Type type){

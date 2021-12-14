@@ -191,10 +191,11 @@ public class Solver {
                             CSVar resultPtr = csManager.getCSVar(csMethod.getContext(), result);
                             List<Var> args = ((Invoke) stmt).getInvokeExp().getArgs();
                             for(int i = 0; i < args.size(); ++i){
-                                if(taintAnalysis.isA2RTransfer(((Invoke) stmt), i)){ //<Invoke.method, i, "result", Invoke.method.retType>
+                                Type type = taintAnalysis.isA2RTransfer(((Invoke) stmt), i);
+                                if(type != null){ //<Invoke.method, i, "result", Invoke.method.retType>
                                     CSVar argPtr = csManager.getCSVar(csMethod.getContext(), args.get(i));
                                     for(CSObj csObj : argPtr.getPointsToSet()){ //遍历argPtr的所有指向对象
-                                        Obj taintObj = taintAnalysis.taintObjTransfer(csObj.getObject(), ((Invoke) stmt).getMethodRef().getReturnType());
+                                        Obj taintObj = taintAnalysis.taintObjTransfer(csObj.getObject(), type);
                                         if(taintObj != null){
                                             CSObj csTaintObj = csManager.getCSObj(taintAnalysis.getEmptyContext(), taintObj);
                                             workList.addEntry(resultPtr, PointsToSetFactory.make(csTaintObj));
@@ -359,10 +360,11 @@ public class Solver {
             //Taint Transfer: args to base
             List<Var> a2bArgs = invoke.getInvokeExp().getArgs();
             for(int i = 0; i < a2bArgs.size(); ++i){
-                if(taintAnalysis.isA2BTransfer(invoke, i)){
+                Type type = taintAnalysis.isA2BTransfer(invoke, i);
+                if(type != null){
                     CSVar a2bArgPtr = csManager.getCSVar(recv.getContext(), a2bArgs.get(i));
                     for(CSObj csObj : a2bArgPtr.getPointsToSet()){ //遍历argPtr的所有指向对象
-                        Obj taintObj = taintAnalysis.taintObjTransfer(csObj.getObject(), invoke.getMethodRef().getReturnType());
+                        Obj taintObj = taintAnalysis.taintObjTransfer(csObj.getObject(), type);
                         if(taintObj != null){
                             CSObj csTaintObj = csManager.getCSObj(taintAnalysis.getEmptyContext(), taintObj);
                             workList.addEntry(recv, PointsToSetFactory.make(csTaintObj));
@@ -373,9 +375,10 @@ public class Solver {
             //Taint Transfer: base to result
             if(result != null){
                 CSVar resultPtr = csManager.getCSVar(recv.getContext(), result);
-                if(taintAnalysis.isB2RTransfer(invoke)){
+                Type type = taintAnalysis.isB2RTransfer(invoke);
+                if(type != null){
                     for(CSObj csObj : recv.getPointsToSet()){
-                        Obj taintObj = taintAnalysis.taintObjTransfer(csObj.getObject(), invoke.getMethodRef().getReturnType());
+                        Obj taintObj = taintAnalysis.taintObjTransfer(csObj.getObject(), type);
                         if(taintObj != null){
                             CSObj csTaintObj = csManager.getCSObj(taintAnalysis.getEmptyContext(), taintObj);
                             workList.addEntry(resultPtr, PointsToSetFactory.make(csTaintObj));
@@ -388,10 +391,11 @@ public class Solver {
                 CSVar resultPtr = csManager.getCSVar(recv.getContext(), result);
                 List<Var> a2rArgs = invoke.getInvokeExp().getArgs();
                 for(int i = 0; i < a2rArgs.size(); ++i){
-                    if(taintAnalysis.isA2RTransfer(invoke, i)){ //<Invoke.method, i, "result", Invoke.method.retType>
+                    Type type = taintAnalysis.isA2RTransfer(invoke, i);
+                    if(type != null){ //<Invoke.method, i, "result", Invoke.method.retType>
                         CSVar a2rArgPtr = csManager.getCSVar(recv.getContext(), a2rArgs.get(i));
                         for(CSObj csObj : a2rArgPtr.getPointsToSet()){ //遍历argPtr的所有指向对象
-                            Obj taintObj = taintAnalysis.taintObjTransfer(csObj.getObject(), invoke.getMethodRef().getReturnType());
+                            Obj taintObj = taintAnalysis.taintObjTransfer(csObj.getObject(), type);
                             if(taintObj != null){
                                 CSObj csTaintObj = csManager.getCSObj(taintAnalysis.getEmptyContext(), taintObj);
                                 workList.addEntry(resultPtr, PointsToSetFactory.make(csTaintObj));
